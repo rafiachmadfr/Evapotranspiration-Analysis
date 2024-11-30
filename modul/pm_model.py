@@ -1,68 +1,85 @@
-import math
+import numpy as np
+from .koef_empiris import koefisien_empiris
+from .extraterrestrial_radiation import extraterrestrial_radiation
 
-# Fungsi untuk menghitung radiasi ekstraterestrial (Ra) dalam MJ/m²/hari
-def calc_Ra(latitude, day_of_year):
-    # Konstanta
-    Gsc = 0.0820  # Konstanta surya (MJ/m²/menit)
-    
-    # Konversi lintang ke radian
-    phi = math.radians(latitude)
-    
-    # Deklinasi matahari (rad)
-    delta = 0.409 * math.sin(2 * math.pi * day_of_year / 365 - 1.39)
-    
-    # Sudut matahari (rad)
-    dr = 1 + 0.033 * math.cos(2 * math.pi * day_of_year / 365)
-    
-    # Sudut waktu matahari (jam)
-    omega_s = math.acos(-math.tan(phi) * math.tan(delta))
-    
-    # Radiasi matahari ekstraterestrial (Ra)
-    Ra = (24 * 60 / math.pi) * Gsc * dr * (omega_s * math.sin(phi) * math.sin(delta) + math.cos(phi) * math.cos(delta) * math.sin(omega_s))
-    
-    return Ra
+# Definisikan konstanta
+kons_stefan_boltzmann = 4.903e-9  # (MJ K^(-4) m^(-2) day^(-1))
+panas_laten_uap = 2.45  # (MJ/kg)
+albedo_tanaman = 0.23  # Albedo tanaman
 
-# Fungsi untuk menghitung ET₀ menggunakan Penman-Monteith
-def calc_ET0(T_mean, RH, n, N, u2, latitude, day_of_year, elevation):
-    # Konstanta
-    G = 0  # Fluks panas tanah harian (dianggap 0)
-    cp = 0.34  # Koefisien psikrometrik (kPa/°C)
-    
-    # Langkah 1: Menghitung radiasi matahari Rs (MJ/m²/hari)
-    a_s = 0.25
-    b_s = 0.50
-    Ra = calc_Ra(latitude, day_of_year)  # Radiasi matahari ekstraterestrial
-    Rs = (a_s + b_s * (n / N)) * Ra
-    
-    # Langkah 2: Menghitung tekanan uap jenuh (e_s) dan tekanan uap aktual (e_a)
-    e_s = 0.6108 * math.exp((17.27 * T_mean) / (T_mean + 237.3))
-    e_a = e_s * (RH / 100)
-    
-    # Langkah 3: Menghitung radiasi bersih (R_n)
-    R_n = (1 - 0.23) * Rs  # Angka albedo (0.23 untuk permukaan tanaman)
-    
-    # Langkah 4: Menghitung konstanta psikrometrik (γ)
-    P = 101.3 * ((293 - 0.0065 * elevation) / 293) ** 5.26  # Tekanan udara (kPa)
-    γ = 0.665 * 10**-3 * P  # Konstanta psikrometrik (kPa/°C)
-    
-    # Langkah 5: Menghitung kemiringan kurva tekanan uap jenuh (Δ)
-    Δ = (4098 * (0.6108 * math.exp((17.27 * T_mean) / (T_mean + 237.3)))) / (T_mean + 237.3) ** 2
-    
-    # Langkah 6: Menghitung ET₀
-    ET0 = (0.408 * Δ * (R_n - G) + γ * (900 / (T_mean + 273)) * u2 * (e_s - e_a)) / (Δ + γ * (1 + cp * u2))
-    
-    return ET0
+# Fungsi untuk menghitung tekanan uap jenuh (e°) pada suhu T (°C)
+def saturation_vapor_pressure(T):
+    return 0.6108 * np.exp((17.27 * T) / (T + 273.3))
 
-# Masukkan data
-T_mean = 25.0  # Suhu rata-rata harian (°C)
-RH = 60.0  # Kelembaban relatif rata-rata harian (%)
-n = 8.0  # Durasi penyinaran matahari aktual (jam)
-N = 12.0  # Durasi penyinaran matahari maksimum (jam)
-u2 = 2.0  # Kecepatan angin pada ketinggian 2 meter (m/s)
-latitude = -8.18  # Lintang lokasi (derajat)
-day_of_year = 249  # Hari ke-200 dalam setahun
-elevation = 96  # Ketinggian lokasi (meter di atas permukaan laut)
+# Fungsi untuk menghitung tekanan uap aktual (e_a) berdasarkan RH dan T_min
+def actual_vapor_pressure(T_min, RH):
+    e_s = saturation_vapor_pressure(T_min)
+    return e_s * (RH / 100)
 
-ET0 = calc_ET0(T_mean, RH, n, N, u2, latitude, day_of_year, elevation)
+# Fungsi untuk menghitung kemiringan kurva tekanan uap (Δ)
+def slope_of_vapor_pressure_curve(T):
+    e_s = saturation_vapor_pressure(T)
+    return (4098 * e_s) / (T + 273.3)**2
 
-print(f"Nilai ET₀ harian: {ET0:.2f} mm/hari")
+# Fungsi untuk menghitung konstanta psikometrik (γ)
+def psychrometric_constant(P):
+    return (1.013 * P) / (0.622 * panas_laten_uap)
+
+# Fungsi untuk menghitung radiasi gelombang pendek bersih (R_ns)
+def net_shortwave_radiation(R_s):
+    return (1 - albedo_tanaman) * R_s
+
+# Fungsi untuk menghitung radiasi gelombang panjang bersih (R_nl)
+def net_longwave_radiation(T_avg, e_a, R_s, R_s0):
+    return kons_stefan_boltzmann * T_avg * (0.34 - 0.14 * np.sqrt(e_a)) * (1.35 * R_s / R_s0 - 0.35)
+
+# Fungsi untuk menghitung tekanan atmosfer (P) berdasarkan ketinggian
+def atmospheric_pressure(z):
+    return 101.3 * ((293 - 0.0065 * z) / 293)**5.26
+
+# Fungsi untuk menghitung radiasi matahari aktual (R_s) dan R_s0 (radiasi saat cerah)
+def solar_radiation(T_max, T_min, z, latitude, input_date):
+    KRS = koefisien_empiris(T_max - T_min)
+    R_a = extraterrestrial_radiation(latitude, input_date)
+    
+    R_s = KRS * np.sqrt(T_max - T_min) * R_a
+    R_s0 = (0.75 + 2 * 10**-5 * z) * R_a
+    
+    return R_s, R_s0
+
+# Fungsi untuk menghitung radiasi bersih (R_n)
+def calculate_net_radiation(T_max, T_min, T_avg, RH, z, latitude, input_date):
+    R_s, R_s0 = solar_radiation(T_max, T_min, z, latitude, input_date)
+    
+    e_a = actual_vapor_pressure(T_min, RH)  # Tekanan uap aktual
+    
+    R_ns = net_shortwave_radiation(R_s)  # Radiasi gelombang pendek bersih
+    R_nl = net_longwave_radiation(T_avg, e_a, R_s, R_s0)  # Radiasi gelombang panjang bersih
+    
+    # Radiasi bersih (R_n)
+    R_n = R_ns - R_nl
+    return R_n
+
+# Fungsi utama untuk menghitung ET Penman-Monteith
+def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, z, latitude, input_date):
+
+    # Menghitung tekanan uap aktual (e_a)
+    e_a = actual_vapor_pressure(T_min, RH)
+
+    # Menghitung kemiringan kurva tekanan uap (Δ)
+    delta = slope_of_vapor_pressure_curve(T_hr)
+
+    # Menghitung tekanan atmosfer (P)
+    P = atmospheric_pressure(z)
+
+    # Menghitung konstanta psikometrik (γ)
+    gamma = psychrometric_constant(P)
+
+    # Menghitung radiasi bersih (R_n)
+    R_n = calculate_net_radiation(T_max, T_min, T_avg, RH, z, latitude, input_date)
+
+    # Menghitung evapotranspirasi potensial (ET_PM) dengan persamaan Penman-Monteith
+    ET_PM = (0.408 * delta * R_n + gamma * (37 / (T_hr + 237)) * u_2 * (saturation_vapor_pressure(T_hr) - e_a)) / \
+            (delta + gamma * (1 + 0.34 * u_2))
+
+    return ET_PM
