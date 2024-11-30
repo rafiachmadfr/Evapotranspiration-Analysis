@@ -38,7 +38,7 @@ Jalankan perhitungan dengan model Gravimetri, Blaney-Criddle, atau Hargreaves-Sa
 Setelah perhitungan selesai, proyek ini akan menghasilkan heatmap yang menggambarkan nilai ET total untuk setiap grup kode.
 
 ### Dependensi
-Python 3.x
+Python 3.12.6
 pandas
 numpy
 matplotlib
