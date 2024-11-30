@@ -63,6 +63,8 @@ def calculate_net_radiation(T_max, T_min, T_avg, RH, altitude, latitude, input_d
 # Fungsi utama untuk menghitung ET Penman-Monteith
 def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, altitude, latitude, input_date):
 
+    R_a = extraterrestrial_radiation(latitude, input_date)
+    
     # Menghitung tekanan uap aktual (e_a)
     e_a = actual_vapor_pressure(T_min, RH)
 
@@ -84,4 +86,4 @@ def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, altitude, latitude, input_date)
     
     ET_PM_total = np.sum(ET_PM)
 
-    return ET_PM
+    return R_a, ET_PM
