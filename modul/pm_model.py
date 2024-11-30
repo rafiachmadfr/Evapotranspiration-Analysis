@@ -84,6 +84,7 @@ def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, altitude, latitude, input_date)
     ET_PM = (0.408 * delta * R_n + gamma * (37 / (T_hr + 237)) * u_2 * (saturation_vapor_pressure(T_hr) - e_a)) / \
             (delta + gamma * (1 + 0.34 * u_2))
     
-    ET_PM_total = np.sum(ET_PM)
+    ET_PM_total = np.array(ET_PM)
+    ET_PM_total = np.sum(ET_PM_total, axis=0)
 
-    return R_a, ET_PM
+    return R_a, ET_PM, ET_PM_total
