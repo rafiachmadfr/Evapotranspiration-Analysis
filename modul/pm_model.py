@@ -34,22 +34,22 @@ def net_longwave_radiation(T_avg, e_a, R_s, R_s0):
     return kons_stefan_boltzmann * T_avg * (0.34 - 0.14 * np.sqrt(e_a)) * (1.35 * R_s / R_s0 - 0.35)
 
 # Fungsi untuk menghitung tekanan atmosfer (P) berdasarkan ketinggian
-def atmospheric_pressure(z):
-    return 101.3 * ((293 - 0.0065 * z) / 293)**5.26
+def atmospheric_pressure(altitude):
+    return 101.3 * ((293 - 0.0065 * altitude) / 293)**5.26
 
 # Fungsi untuk menghitung radiasi matahari aktual (R_s) dan R_s0 (radiasi saat cerah)
-def solar_radiation(T_max, T_min, z, latitude, input_date):
+def solar_radiation(T_max, T_min, altitude, latitude, input_date):
     KRS = koefisien_empiris(T_max - T_min)
     R_a = extraterrestrial_radiation(latitude, input_date)
     
     R_s = KRS * np.sqrt(T_max - T_min) * R_a
-    R_s0 = (0.75 + 2 * 10**-5 * z) * R_a
+    R_s0 = (0.75 + 2 * 10**-5 * altitude) * R_a
     
     return R_s, R_s0
 
 # Fungsi untuk menghitung radiasi bersih (R_n)
-def calculate_net_radiation(T_max, T_min, T_avg, RH, z, latitude, input_date):
-    R_s, R_s0 = solar_radiation(T_max, T_min, z, latitude, input_date)
+def calculate_net_radiation(T_max, T_min, T_avg, RH, altitude, latitude, input_date):
+    R_s, R_s0 = solar_radiation(T_max, T_min, altitude, latitude, input_date)
     
     e_a = actual_vapor_pressure(T_min, RH)  # Tekanan uap aktual
     
@@ -61,7 +61,7 @@ def calculate_net_radiation(T_max, T_min, T_avg, RH, z, latitude, input_date):
     return R_n
 
 # Fungsi utama untuk menghitung ET Penman-Monteith
-def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, z, latitude, input_date):
+def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, altitude, latitude, input_date):
 
     # Menghitung tekanan uap aktual (e_a)
     e_a = actual_vapor_pressure(T_min, RH)
@@ -70,16 +70,18 @@ def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, z, latitude, input_date):
     delta = slope_of_vapor_pressure_curve(T_hr)
 
     # Menghitung tekanan atmosfer (P)
-    P = atmospheric_pressure(z)
+    P = atmospheric_pressure(altitude)
 
     # Menghitung konstanta psikometrik (γ)
     gamma = psychrometric_constant(P)
 
     # Menghitung radiasi bersih (R_n)
-    R_n = calculate_net_radiation(T_max, T_min, T_avg, RH, z, latitude, input_date)
+    R_n = calculate_net_radiation(T_max, T_min, T_avg, RH, altitude, latitude, input_date)
 
     # Menghitung evapotranspirasi potensial (ET_PM) dengan persamaan Penman-Monteith
     ET_PM = (0.408 * delta * R_n + gamma * (37 / (T_hr + 237)) * u_2 * (saturation_vapor_pressure(T_hr) - e_a)) / \
             (delta + gamma * (1 + 0.34 * u_2))
+    
+    ET_PM_total = np.sum(ET_PM)
 
     return ET_PM
