@@ -24,8 +24,9 @@ Sebelum menjalankan proyek ini, pastikan Anda telah menginstal **Python** dan pu
 4. **seaborn**: Untuk visualisasi data lebih lanjut, terutama dalam bentuk **heatmap** 🔥.
 
 Anda dapat menginstal pustaka yang dibutuhkan dengan menjalankan perintah berikut di terminal: 
-bash
-```pip install pandas numpy matplotlib seaborn```
+```bash
+pip install pandas numpy matplotlib seaborn
+```
 
 ### ⚙️ Cara Penggunaan  
 
