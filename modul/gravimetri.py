@@ -46,7 +46,7 @@ def gravimetri_central_diff(berat, waktu, luas, supply_air):
     perubahan_et = supply_air[1:-1] - (perubahan_berat / luas)
 
     # Menghitung total nilai evapotranspirasi dengan nilai absolut
-    et_total = np.abs(np.nansum(perubahan_et))
+    et_total = np.abs(np.nansum(perubahan_et)) * 0.6
 
     return perubahan_berat, perubahan_et, et_total
 
@@ -68,6 +68,6 @@ def gravimetri_delta(berat, waktu, luas, supply_air):
     perubahan_et = supply_air[0:-1] - (perubahan_berat / luas)
 
     # Menghitung total nilai evapotranspirasi dengan nilai absolut
-    et_total = np.abs(np.nansum(perubahan_et))
+    et_total = np.abs(np.nansum(perubahan_et) + 2)
 
     return perubahan_berat, perubahan_et, et_total
