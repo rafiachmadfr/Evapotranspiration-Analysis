@@ -1,0 +1,4 @@
+Metode,Akurasi,RMSE,MAE,MBE
+Blaney-Criddle,40.17,2.34,2.24,2.24
+Hargreaves-Samani,82.31,1.06,0.82,0.66
+Penman-Monteith,94.63,0.82,0.73,-0.2

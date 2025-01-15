@@ -5,6 +5,8 @@ altitude = 98
 # Massa jenis air dalam kg/m^3
 rho_air = 1000
 
+Koefisien_tanaman_alpukat = 0.5
+
 # BC Metode berdasarkan tabel persentase hari terang
 persentase_hari_terang = 0.27
 

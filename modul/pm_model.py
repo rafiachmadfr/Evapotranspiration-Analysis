@@ -85,6 +85,6 @@ def pm_model(T_hr, RH, u_2, T_min, T_max, T_avg, altitude, latitude, input_date)
             (delta + gamma * (1 + 0.34 * u_2))
     
     ET_PM_total = np.array(ET_PM)
-    ET_PM_total = np.sum(ET_PM_total, axis=0) + 0.6
+    ET_PM_total = np.sum(ET_PM_total, axis=0)
 
     return R_a, ET_PM, ET_PM_total
